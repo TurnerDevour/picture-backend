@@ -50,3 +50,13 @@ create table if not exists picture
     INDEX idx_user_id (user_id)            -- 提升基于用户 ID 的查询性能
 ) engine = InnoDB comment '图片'
   collate utf8mb4_general_ci;
+
+-- 修改图片表，添加审核相关字段
+alter table picture
+    add column review_status  int default 0 not null comment '审核状态（0：待审核，1：审核通过，2：审核不通过）',
+    add column review_message varchar(512)  null comment '审核信息',
+    add column reviewer_id    bigint        null comment '审核人 id',
+    add column review_time    datetime      null comment '审核时间';
+
+-- 创建基于审核状态的索引
+create index idx_review_status on picture (review_status);

@@ -11,11 +11,9 @@ import com.example.picturebackend.constant.UserConstant;
 import com.example.picturebackend.exception.BusinessException;
 import com.example.picturebackend.exception.ErrorCode;
 import com.example.picturebackend.exception.ThrowUtils;
-import com.example.picturebackend.model.dto.picture.PictureEditDTO;
-import com.example.picturebackend.model.dto.picture.PictureQueryDTO;
-import com.example.picturebackend.model.dto.picture.PictureUpdateDTO;
-import com.example.picturebackend.model.dto.picture.PictureUploadDTO;
+import com.example.picturebackend.model.dto.picture.*;
 import com.example.picturebackend.model.entity.Picture;
+import com.example.picturebackend.model.enums.PictureReviewStatusEnum;
 import com.example.picturebackend.model.vo.LoginUserVO;
 import com.example.picturebackend.model.vo.PictureTagCategoryVO;
 import com.example.picturebackend.model.vo.PictureVO;
@@ -45,13 +43,11 @@ public class PictureController {
     private UserService userService;
 
     @PostMapping("/upload")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<PictureVO> uploadPicture(@RequestPart("file") MultipartFile multipartFile, @Valid PictureUploadDTO pictureUploadDTO, HttpServletRequest request) {
         LoginUserVO loginUser = userService.getCurrentLoginUser(request);
         PictureVO pictureVO = pictureService.uploadPicture(multipartFile, pictureUploadDTO, loginUser);
 
         return ResultUtils.success(pictureVO);
-
     }
 
     @PostMapping("/delete")
@@ -81,7 +77,7 @@ public class PictureController {
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateDTO pictureUpdateDTO) {
+    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateDTO pictureUpdateDTO, HttpServletRequest request) {
         if (pictureUpdateDTO == null || pictureUpdateDTO.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -93,6 +89,11 @@ public class PictureController {
         Long id = pictureUpdateDTO.getId();
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+
+        // 补充审核信息
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        pictureService.fillReviewInfo(picture, loginUser);
+
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
@@ -136,9 +137,8 @@ public class PictureController {
     public BaseResponse<Page<PictureVO>> listPictureVOByPage(@RequestBody PictureQueryDTO pictureQueryDTO, HttpServletRequest request) {
         long current = pictureQueryDTO.getCurrent();
         long size = pictureQueryDTO.getPageSize();
-
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-
+        pictureQueryDTO.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size), pictureService.getQueryWrapper(pictureQueryDTO));
         return ResultUtils.success(pictureService.getPictureVOPage(picturePage, request));
     }
@@ -167,6 +167,11 @@ public class PictureController {
         picture.setTags(JSONUtil.toJsonStr(pictureEditDTO.getTags()));
         picture.setEditTime(LocalDateTime.now());
         pictureService.validPicture(picture);
+
+        // 补充审核信息
+        pictureService.fillReviewInfo(picture, loginUser);
+
+        // 操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
@@ -180,5 +185,17 @@ public class PictureController {
         pictureTagCategory.setTagList(tagList);
         pictureTagCategory.setCategoryList(categoryList);
         return ResultUtils.success(pictureTagCategory);
+    }
+
+    @PostMapping("/review")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> reviewPicture(@RequestBody PictureReviewDTO pictureReviewDTO, HttpServletRequest request) {
+        // 1. 校验参数
+        ThrowUtils.throwIf(pictureReviewDTO == null || pictureReviewDTO.getId() <= 0, ErrorCode.PARAMS_ERROR);
+        // 2. 获取登录用户
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        // 3. 调用 service 进行审核
+        pictureService.pictureReview(pictureReviewDTO, loginUser);
+        return ResultUtils.success(true);
     }
 }
