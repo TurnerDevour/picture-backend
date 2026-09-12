@@ -5,12 +5,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.IService;
 import com.example.picturebackend.model.dto.picture.PictureQueryDTO;
 import com.example.picturebackend.model.dto.picture.PictureReviewDTO;
+import com.example.picturebackend.model.dto.picture.PictureUploadByBatchDTO;
 import com.example.picturebackend.model.dto.picture.PictureUploadDTO;
 import com.example.picturebackend.model.entity.Picture;
 import com.example.picturebackend.model.entity.User;
 import com.example.picturebackend.model.vo.LoginUserVO;
 import com.example.picturebackend.model.vo.PictureVO;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -19,13 +19,13 @@ public interface PictureService extends IService<Picture> {
     /**
      * 上传图片
      *
-     * @param multipartFile    图片文件
+     * @param inputSource      图片文件
      * @param pictureUploadDTO 图片上传信息
      * @param loginUser        登录用户
      *
      * @return PictureVO
      */
-    PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadDTO pictureUploadDTO, LoginUserVO loginUser);
+    PictureVO uploadPicture(Object inputSource, PictureUploadDTO pictureUploadDTO, LoginUserVO loginUser);
 
     /**
      * 获取查询条件
@@ -79,5 +79,14 @@ public interface PictureService extends IService<Picture> {
      */
     void fillReviewInfo(Picture picture, LoginUserVO loginUser);
 
+    /**
+     * 批量抓取和创建图片
+     *
+     * @param pictureUploadByBatchDTO 批量上传请求
+     * @param loginUser               登录用户
+     *
+     * @return 成功创建的图片数
+     */
+    Integer uploadPictureByBatch(PictureUploadByBatchDTO pictureUploadByBatchDTO, LoginUserVO loginUser);
 }
 

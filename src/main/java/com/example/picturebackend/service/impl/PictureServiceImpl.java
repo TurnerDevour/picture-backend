@@ -2,6 +2,7 @@ package com.example.picturebackend.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -10,37 +11,48 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.example.picturebackend.exception.BusinessException;
 import com.example.picturebackend.exception.ErrorCode;
 import com.example.picturebackend.exception.ThrowUtils;
-import com.example.picturebackend.manage.FileManage;
+import com.example.picturebackend.manage.upload.FilePictureUpload;
+import com.example.picturebackend.manage.upload.PictureUploadTemplate;
+import com.example.picturebackend.manage.upload.UrlPictureUpload;
+import com.example.picturebackend.mapper.PictureMapper;
 import com.example.picturebackend.model.dto.file.UploadPictureResult;
 import com.example.picturebackend.model.dto.picture.PictureQueryDTO;
 import com.example.picturebackend.model.dto.picture.PictureReviewDTO;
+import com.example.picturebackend.model.dto.picture.PictureUploadByBatchDTO;
 import com.example.picturebackend.model.dto.picture.PictureUploadDTO;
 import com.example.picturebackend.model.dto.user.UserVO;
+import com.example.picturebackend.model.entity.Picture;
 import com.example.picturebackend.model.entity.User;
 import com.example.picturebackend.model.enums.PictureReviewStatusEnum;
 import com.example.picturebackend.model.vo.LoginUserVO;
 import com.example.picturebackend.model.vo.PictureVO;
-import com.example.picturebackend.service.UserService;
-import org.springframework.stereotype.Service;
-import com.example.picturebackend.mapper.PictureMapper;
-import com.example.picturebackend.model.entity.Picture;
 import com.example.picturebackend.service.PictureService;
-import org.springframework.web.multipart.MultipartFile;
+import com.example.picturebackend.service.UserService;
+import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> implements PictureService {
 
     @Resource
-    private FileManage fileManage;
+    private FilePictureUpload filePictureUpload;
+
+    @Resource
+    private UrlPictureUpload urlPictureUpload;
 
     @Resource
     private UserService userService;
@@ -48,14 +60,14 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     /**
      * 上传图片
      *
-     * @param multipartFile    图片文件
+     * @param inputSource      图片文件或图片URL
      * @param pictureUploadDTO 图片上传信息
      * @param loginUser        登录用户
      *
      * @return PictureVO
      */
     @Override
-    public PictureVO uploadPicture(MultipartFile multipartFile, PictureUploadDTO pictureUploadDTO, LoginUserVO loginUser) {
+    public PictureVO uploadPicture(Object inputSource, PictureUploadDTO pictureUploadDTO, LoginUserVO loginUser) {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
 
         // 1. 判断新增图片还是更新图片
@@ -77,9 +89,14 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
         // 2. 上传图片到云存储
         String uploadPathPrefix = String.format("public/%s", loginUser.getId());
-        UploadPictureResult uploadPictureResult = fileManage.uploadPicture(multipartFile, uploadPathPrefix);
+        PictureUploadTemplate pictureUploadTemplate = filePictureUpload;
+        if (inputSource instanceof String) {
+            pictureUploadTemplate = urlPictureUpload;
+        }
 
-        Picture picture = createPicture(loginUser, uploadPictureResult, pictureId);
+        UploadPictureResult uploadPictureResult = pictureUploadTemplate.uploadPicture(inputSource, uploadPathPrefix);
+
+        Picture picture = createPicture(loginUser, uploadPictureResult, pictureId, pictureUploadDTO);
 
         // 补充审核信息
         fillReviewInfo(picture, loginUser);
@@ -287,10 +304,89 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
     }
 
-    private static Picture createPicture(LoginUserVO loginUser, UploadPictureResult uploadPictureResult, Long pictureId) {
+    /**
+     * 批量抓取和创建图片
+     *
+     * @param pictureUploadByBatchDTO 批量上传请求
+     * @param loginUser               登录用户
+     *
+     * @return 成功创建的图片数
+     */
+    @Override
+    public Integer uploadPictureByBatch(PictureUploadByBatchDTO pictureUploadByBatchDTO, LoginUserVO loginUser) {
+        // 1. 校验参数
+        String searchText = pictureUploadByBatchDTO.getSearchText();
+        Integer count = pictureUploadByBatchDTO.getCount();
+        String namePrefix = pictureUploadByBatchDTO.getNamePrefix();
+        if (StrUtil.isBlank(namePrefix)) {
+            namePrefix = searchText;
+        }
+
+        ThrowUtils.throwIf(StrUtil.isBlank(searchText) || count == null || count <= 0 || count >= 30, ErrorCode.PARAMS_ERROR, "参数错误");
+
+        // 2. 抓取地址
+        String fetchUrl = String.format("https://www.bing.com/images/async?q=%s&mmasync=1", searchText);
+
+        Document document = null;
+        try {
+            document = Jsoup.connect(fetchUrl).get();
+        } catch (IOException e) {
+            log.error("获取页面失败", e);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取页面失败");
+        }
+
+        // 3. 解析图片的HTML，获取图片的URL
+        Element dgControlDIV = document.getElementsByClass("dgControl").first();
+        if (ObjUtil.isNull(dgControlDIV)) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "获取元素失败");
+        }
+        Elements imgElementList = dgControlDIV.select("img.mimg");
+        int uploadCount = 0;
+        for (Element imgElement : imgElementList) {
+            String fileUrl = imgElement.attr("src");
+            if (StrUtil.isBlank(fileUrl)) {
+                log.info("当前图片URL为空，跳过：{}", fileUrl);
+                continue;
+            }
+
+            // 4. 处理图片URL中出现的转义字符
+            int questionMarkIndex = fileUrl.indexOf("?");
+            if (questionMarkIndex > -1) {
+                fileUrl = fileUrl.substring(0, questionMarkIndex);
+            }
+
+            // 5. 上传图片
+            try {
+                PictureUploadDTO pictureUploadDTO = new PictureUploadDTO();
+
+                if (StrUtil.isNotBlank(namePrefix)) {
+                    // 如果 namePrefix 不为空，则使用 namePrefix + "_" + (uploadCount + 1) 作为图片名称
+                    pictureUploadDTO.setPicName(namePrefix + "_" + (uploadCount + 1));
+                }
+
+                PictureVO pictureVO = this.uploadPicture(fileUrl, pictureUploadDTO, loginUser);
+                log.info("成功上传图片：{}", pictureVO.getUrl());
+                uploadCount++;
+            } catch (Exception e) {
+                log.error("上传图片失败：{}", fileUrl, e);
+                continue;
+            }
+            if (uploadCount >= count) {
+                break;
+            }
+        }
+
+        return uploadCount;
+    }
+
+    private static Picture createPicture(LoginUserVO loginUser, UploadPictureResult uploadPictureResult, Long pictureId, PictureUploadDTO pictureUploadDTO) {
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
-        picture.setName(uploadPictureResult.getName());
+        String picName = uploadPictureResult.getName();
+        if (pictureUploadDTO != null && StrUtil.isNotBlank(pictureUploadDTO.getPicName())) {
+            picName = pictureUploadDTO.getPicName();
+        }
+        picture.setName(picName);
         picture.setPicSize(uploadPictureResult.getPicSize());
         picture.setPicWidth(uploadPictureResult.getPicWidth());
         picture.setPicHeight(uploadPictureResult.getPicHeight());

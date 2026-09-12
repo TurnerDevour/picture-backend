@@ -43,9 +43,17 @@ public class PictureController {
     private UserService userService;
 
     @PostMapping("/upload")
-    public BaseResponse<PictureVO> uploadPicture(@RequestPart("file") MultipartFile multipartFile, @Valid PictureUploadDTO pictureUploadDTO, HttpServletRequest request) {
+    public BaseResponse<PictureVO> uploadPicture(@RequestPart("file") MultipartFile multipartFile, PictureUploadDTO pictureUploadDTO, HttpServletRequest request) {
         LoginUserVO loginUser = userService.getCurrentLoginUser(request);
         PictureVO pictureVO = pictureService.uploadPicture(multipartFile, pictureUploadDTO, loginUser);
+
+        return ResultUtils.success(pictureVO);
+    }
+
+    @PostMapping("/upload/url")
+    public BaseResponse<PictureVO> uploadPictureByUrl(@RequestBody PictureUploadDTO pictureUploadDTO, HttpServletRequest request) {
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        PictureVO pictureVO = pictureService.uploadPicture(pictureUploadDTO.getUrl(), pictureUploadDTO, loginUser);
 
         return ResultUtils.success(pictureVO);
     }
@@ -197,5 +205,17 @@ public class PictureController {
         // 3. 调用 service 进行审核
         pictureService.pictureReview(pictureReviewDTO, loginUser);
         return ResultUtils.success(true);
+    }
+
+    @PostMapping("/upload/batch")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Integer> uploadPictureByBatch(@RequestBody PictureUploadByBatchDTO pictureUploadByBatchDTO, HttpServletRequest request) {
+        // 1. 校验参数
+        ThrowUtils.throwIf(pictureUploadByBatchDTO == null, ErrorCode.PARAMS_ERROR);
+        // 2. 获取登录用户
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        // 3. 调用 service 进行批量上传
+        int successCount = pictureService.uploadPictureByBatch(pictureUploadByBatchDTO, loginUser);
+        return ResultUtils.success(successCount);
     }
 }
