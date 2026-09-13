@@ -382,6 +382,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     private static Picture createPicture(LoginUserVO loginUser, UploadPictureResult uploadPictureResult, Long pictureId, PictureUploadDTO pictureUploadDTO) {
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
+        picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
         String picName = uploadPictureResult.getName();
         if (pictureUploadDTO != null && StrUtil.isNotBlank(pictureUploadDTO.getPicName())) {
             picName = pictureUploadDTO.getPicName();

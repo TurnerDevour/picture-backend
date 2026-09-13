@@ -54,5 +54,11 @@ public class UploadPictureResult implements Serializable {
     @ApiModelProperty(value = "图片格式")
     private String picFormat;
 
+    /**
+     * 缩略图 url
+     */
+    @ApiModelProperty(value = "缩略图 url")
+    private String thumbnailUrl;
+
     private static final long serialVersionUID = 1L;
 }

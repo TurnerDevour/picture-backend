@@ -60,3 +60,7 @@ alter table picture
 
 -- 创建基于审核状态的索引
 create index idx_review_status on picture (review_status);
+
+ALTER TABLE picture
+    ADD COLUMN thumbnail_url varchar(512) NULL COMMENT '缩略图 url';
+

@@ -85,6 +85,13 @@ public class PictureVO implements Serializable {
     private String picFormat;
 
     /**
+     * 缩略图 url
+     */
+    @ApiModelProperty(value = "缩略图 url")
+    private String thumbnailUrl;
+
+
+    /**
      * 创建用户 id
      */
     @ApiModelProperty(value = "创建用户 id")

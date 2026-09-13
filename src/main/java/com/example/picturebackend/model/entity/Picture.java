@@ -99,6 +99,13 @@ public class Picture implements Serializable {
     private String picFormat;
 
     /**
+     * 缩略图 url
+     */
+    @TableField(value = "thumbnail_url")
+    @ApiModelProperty(value = "缩略图 url")
+    private String thumbnailUrl;
+
+    /**
      * 创建用户 id
      */
     @TableField(value = "user_id")
