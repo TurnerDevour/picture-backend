@@ -395,6 +395,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         return uploadCount;
     }
 
+    /**
+     * 删除图片
+     *
+     * @param oldPicture 旧图片实体
+     */
     @Async
     @Override
     public void deletePicture(Picture oldPicture) {
@@ -428,6 +433,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
     }
 
+    /**
+     * 创建图片实体
+     *
+     * @param loginUser           登录用户
+     * @param uploadPictureResult 上传结果
+     * @param pictureId           图片ID
+     * @param pictureUploadDTO    图片上传信息
+     *
+     * @return Picture
+     */
     private static Picture createPicture(LoginUserVO loginUser, UploadPictureResult uploadPictureResult, Long pictureId, PictureUploadDTO pictureUploadDTO) {
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
