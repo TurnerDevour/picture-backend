@@ -88,5 +88,12 @@ public interface PictureService extends IService<Picture> {
      * @return 成功创建的图片数
      */
     Integer uploadPictureByBatch(PictureUploadByBatchDTO pictureUploadByBatchDTO, LoginUserVO loginUser);
+
+    /**
+     * 删除图片
+     *
+     * @param picture 图片实体
+     */
+    void deletePicture(Picture oldPicture);
 }
 

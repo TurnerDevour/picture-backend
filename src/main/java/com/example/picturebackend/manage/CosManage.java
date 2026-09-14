@@ -2,6 +2,7 @@ package com.example.picturebackend.manage;
 
 import cn.hutool.core.io.FileUtil;
 import com.example.picturebackend.config.CosClientConfig;
+import com.qcloud.cos.exception.CosClientException;
 import com.qcloud.cos.model.COSObject;
 import com.qcloud.cos.model.GetObjectRequest;
 import com.qcloud.cos.model.PutObjectRequest;
@@ -82,5 +83,16 @@ public class CosManage {
         picOperations.setRules(ruleList);
         putObjectRequest.setPicOperations(picOperations);
         return cosClientConfig.cosClient().putObject(putObjectRequest);
+    }
+
+    /**
+     * 删除腾讯云 COS 中的对象。
+     *
+     * @param key 文件在存储桶中的路径。
+     *
+     * @throws CosClientException 如果删除对象时发生错误。
+     */
+    public void deleteObject(String key) throws CosClientException {
+        cosClientConfig.cosClient().deleteObject(cosClientConfig.getBucketName(), key);
     }
 }

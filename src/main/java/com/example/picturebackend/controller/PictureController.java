@@ -97,6 +97,10 @@ public class PictureController {
 
         boolean result = pictureService.removeById(id);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+
+        // 清理cos图片
+        pictureService.deletePicture(oldPicture);
+
         return ResultUtils.success(true);
     }
 

@@ -8,9 +8,11 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import com.example.picturebackend.config.CosClientConfig;
 import com.example.picturebackend.exception.BusinessException;
 import com.example.picturebackend.exception.ErrorCode;
 import com.example.picturebackend.exception.ThrowUtils;
+import com.example.picturebackend.manage.CosManage;
 import com.example.picturebackend.manage.upload.FilePictureUpload;
 import com.example.picturebackend.manage.upload.PictureUploadTemplate;
 import com.example.picturebackend.manage.upload.UrlPictureUpload;
@@ -28,11 +30,13 @@ import com.example.picturebackend.model.vo.LoginUserVO;
 import com.example.picturebackend.model.vo.PictureVO;
 import com.example.picturebackend.service.PictureService;
 import com.example.picturebackend.service.UserService;
+import com.qcloud.cos.exception.CosClientException;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -56,6 +60,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private CosManage cosManage;
 
     /**
      * 上传图片
@@ -103,6 +110,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
         // 3. 保存图片信息到数据库
         boolean result = this.saveOrUpdate(picture);
+
+        // 4. 如果是更新图片，则删除旧图片
+        if (pictureId != null) {
+            Picture oldPicture = this.getById(pictureId);
+            if (oldPicture != null) {
+                deletePicture(oldPicture);
+            }
+        }
+
         ThrowUtils.throwIf(!result, ErrorCode.SYSTEM_ERROR, "保存图片信息失败");
         return PictureVO.convertObjectToVO(picture);
     }
@@ -377,6 +393,39 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
 
         return uploadCount;
+    }
+
+    @Async
+    @Override
+    public void deletePicture(Picture oldPicture) {
+        // 1. 判断图片是否存在
+        String pictureUrl = oldPicture.getUrl();
+        Long count = this.lambdaQuery().eq(Picture::getUrl, pictureUrl).count();
+        if (count == null || count <= 0) {
+            log.info("图片不存在，无法删除：{}", oldPicture.getUrl());
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "图片不存在，无法删除");
+        }
+
+        if (count > 1) {
+            log.info("图片被其他用户使用，无法删除：{}", oldPicture.getUrl());
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "图片被其他用户使用，无法删除");
+        }
+
+        // 2. 从pictureUrl中获取图片的key
+        String key = pictureUrl.substring(pictureUrl.indexOf(".com/"));
+
+        // 3. 删除图片
+        try {
+            cosManage.deleteObject(key);
+
+            if (StrUtil.isNotEmpty(oldPicture.getThumbnailUrl())) {
+                String thumbnailKey = oldPicture.getThumbnailUrl().substring(oldPicture.getThumbnailUrl().indexOf(".com/"));
+                cosManage.deleteObject(thumbnailKey);
+            }
+        } catch (CosClientException e) {
+            log.error("删除图片失败：{}", oldPicture.getUrl(), e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除图片失败");
+        }
     }
 
     private static Picture createPicture(LoginUserVO loginUser, UploadPictureResult uploadPictureResult, Long pictureId, PictureUploadDTO pictureUploadDTO) {

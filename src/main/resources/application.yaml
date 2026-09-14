@@ -16,11 +16,17 @@ spring:
     timeout: 5000
     password: admin123
     username: default
+  session:
+    store-type: redis
+    timeout: 2592000 # 30天
 
 server:
   port: 8123
   servlet:
     context-path: /api
+    session:
+      cookie:
+        max-age: 2592000 # 30天
 
 mybatis-plus:
   configuration:
