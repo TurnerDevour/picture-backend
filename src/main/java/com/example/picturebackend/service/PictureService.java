@@ -3,10 +3,7 @@ package com.example.picturebackend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.IService;
-import com.example.picturebackend.model.dto.picture.PictureQueryDTO;
-import com.example.picturebackend.model.dto.picture.PictureReviewDTO;
-import com.example.picturebackend.model.dto.picture.PictureUploadByBatchDTO;
-import com.example.picturebackend.model.dto.picture.PictureUploadDTO;
+import com.example.picturebackend.model.dto.picture.*;
 import com.example.picturebackend.model.entity.Picture;
 import com.example.picturebackend.model.entity.User;
 import com.example.picturebackend.model.vo.LoginUserVO;
@@ -90,10 +87,34 @@ public interface PictureService extends IService<Picture> {
     Integer uploadPictureByBatch(PictureUploadByBatchDTO pictureUploadByBatchDTO, LoginUserVO loginUser);
 
     /**
+     * 清理COS图片
+     *
+     * @param oldPicture 旧图片实体
+     */
+    void clearPictureFile(Picture oldPicture);
+
+    /**
+     * 校验图片权限
+     *
+     * @param picture   图片实体
+     * @param loginUser 登录用户
+     */
+    void checkPictureAuth(Picture picture, LoginUserVO loginUser);
+
+    /**
      * 删除图片
      *
-     * @param picture 图片实体
+     * @param pictureId 图片ID
+     * @param loginUser 登录用户
      */
-    void deletePicture(Picture oldPicture);
+    void deletePicture(long pictureId, LoginUserVO loginUser);
+
+    /**
+     * 编辑图片信息
+     *
+     * @param pictureEditDTO 图片编辑信息
+     * @param loginUser      登录用户
+     */
+    void editPicture(PictureEditDTO pictureEditDTO, LoginUserVO loginUser);
 }
 

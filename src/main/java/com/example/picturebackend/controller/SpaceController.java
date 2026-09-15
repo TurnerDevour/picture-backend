@@ -11,11 +11,14 @@ import com.example.picturebackend.exception.BusinessException;
 import com.example.picturebackend.exception.ErrorCode;
 import com.example.picturebackend.exception.ThrowUtils;
 import com.example.picturebackend.model.dto.picture.*;
+import com.example.picturebackend.model.dto.space.SpaceAddDTO;
 import com.example.picturebackend.model.dto.space.SpaceEditDTO;
 import com.example.picturebackend.model.dto.space.SpaceQueryDTO;
 import com.example.picturebackend.model.dto.space.SpaceUpdateDTO;
 import com.example.picturebackend.model.entity.Space;
+import com.example.picturebackend.model.enums.SpaceLevelEnum;
 import com.example.picturebackend.model.vo.LoginUserVO;
+import com.example.picturebackend.model.vo.SpaceLevelVO;
 import com.example.picturebackend.model.vo.SpaceVO;
 import com.example.picturebackend.service.SpaceService;
 import com.example.picturebackend.service.UserService;
@@ -25,6 +28,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -36,6 +42,15 @@ public class SpaceController {
 
     @Resource
     private UserService userService;
+
+
+    @PostMapping("/add")
+    public BaseResponse<Long> addSpace(@RequestBody SpaceAddDTO spaceAddDTO, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceAddDTO == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        long newId = spaceService.addSpace(spaceAddDTO, loginUser);
+        return ResultUtils.success(newId);
+    }
 
 
     @PostMapping("/delete")
@@ -132,6 +147,20 @@ public class SpaceController {
 
         Page<Space> picturePage = spaceService.page(new Page<>(current, size), spaceService.getQueryWrapper(spaceQueryDTO));
         return ResultUtils.success(spaceService.getSpaceVOPage(picturePage, request));
+    }
+
+    @GetMapping("/list/level")
+    public BaseResponse<List<SpaceLevelVO>> listSpaceLevel() {
+        // 获取所有空间枚举类
+        List<SpaceLevelVO> spaceLevelVOList = Arrays.stream(SpaceLevelEnum.values())
+                .map(spaceLevelEnum -> new SpaceLevelVO(
+                        spaceLevelEnum.getValue(),
+                        spaceLevelEnum.getText(),
+                        spaceLevelEnum.getMaxSize(),
+                        spaceLevelEnum.getMaxCount()
+                ))
+                .collect(Collectors.toList());
+        return ResultUtils.success(spaceLevelVOList);
     }
 
     /**

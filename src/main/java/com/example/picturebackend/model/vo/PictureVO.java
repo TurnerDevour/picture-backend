@@ -121,6 +121,13 @@ public class PictureVO implements Serializable {
     @ApiModelProperty(value = "用户信息")
     private UserVO user;
 
+    /**
+     * 空间 id
+     */
+    @ApiModelProperty(value = "空间 id")
+    private Long spaceId;
+
+
     private static final long serialVersionUID = 1L;
 
     /**

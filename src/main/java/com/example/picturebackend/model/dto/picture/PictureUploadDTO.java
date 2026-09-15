@@ -33,6 +33,11 @@ public class PictureUploadDTO implements Serializable {
     @ApiModelProperty(value = "图片名称", required = false)
     private String picName;
 
+    /**
+     * 空间 id
+     */
+    @ApiModelProperty(value = "空间 id", required = false)
+    private Long spaceId;
 
     private static final long serialVersionUID = 1L;
 }

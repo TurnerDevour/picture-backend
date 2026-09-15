@@ -43,5 +43,11 @@ public class PictureEditDTO implements Serializable {
     @ApiModelProperty(value = "标签（JSON 数组）")
     private List<String> tags;
 
+    /**
+     * 空间 id
+     */
+    @ApiModelProperty(value = "空间 id")
+    private Long spaceId;
+
     private static final long serialVersionUID = 1L;
 }

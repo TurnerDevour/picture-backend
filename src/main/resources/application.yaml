@@ -16,6 +16,12 @@ spring:
     timeout: 5000
     password: admin123
     username: default
+  #    database: 0
+  #    host: ${REDIS_HOST}
+  #    port: ${REDIS_PORT}
+  #    timeout: 5000
+  #    password: ${REDIS_PASSWORD}
+  #    username: ${REDIS_USERNAME}
   session:
     store-type: redis
     timeout: 2592000 # 30天
