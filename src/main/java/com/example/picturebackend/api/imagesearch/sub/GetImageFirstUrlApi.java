@@ -53,12 +53,5 @@ public class GetImageFirstUrlApi {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "搜索失败");
         }
     }
-
-    public static void main(String[] args) {
-        // 请求目标 URL
-        String url = "https://graph.baidu.com/s?card_key=&entrance=GENERAL&extUiData[isLogoShow]=1&f=all&isLogoShow=1&session_id=5006263151803430225&sign=126274d1cdb4452d515eb01789563977&tpl_from=pc";
-        String imageFirstUrl = getImageFirstUrl(url);
-        System.out.println("搜索成功，结果 URL：" + imageFirstUrl);
-    }
 }
 

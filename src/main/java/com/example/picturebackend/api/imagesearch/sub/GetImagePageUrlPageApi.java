@@ -81,10 +81,4 @@ public class GetImagePageUrlPageApi {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "请求失败，发生异常：" + e.getMessage());
         }
     }
-
-    public static void main(String[] args) {
-        String imageUrl = "https://p3.itc.cn/q_70/images01/20221222/95583d4c535a4a5eba3aabfddd8e3c3f.jpeg";
-        String pageUrl = getImagePageUrl(imageUrl);
-        System.out.println("搜索成功，页面地址: " + pageUrl);
-    }
 }
