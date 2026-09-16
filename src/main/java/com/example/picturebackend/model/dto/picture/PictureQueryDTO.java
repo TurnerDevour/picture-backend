@@ -1,12 +1,14 @@
 package com.example.picturebackend.model.dto.picture;
 
 import com.example.picturebackend.common.PageRequest;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -118,6 +120,19 @@ public class PictureQueryDTO extends PageRequest implements Serializable {
     @ApiModelProperty(value = "审核人 id")
     private Long reviewerId;
 
+    /**
+     * 开始编辑时间
+     */
+    @ApiModelProperty(value = "开始编辑时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime startEditTime;
+
+    /**
+     * 结束编辑时间
+     */
+    @ApiModelProperty(value = "结束编辑时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime endEditTime;
 
 
     private static final long serialVersionUID = 1L;

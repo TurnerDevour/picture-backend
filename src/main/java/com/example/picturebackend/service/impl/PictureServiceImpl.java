@@ -110,10 +110,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
         // 1. 判断新增图片还是更新图片
         Long pictureId = pictureUploadDTO.getId();
+        // 更新前的旧图片信息（用于更新后清理旧文件）
+        Picture oldPicture = null;
 
         // 如果是更新图片，则需要判断图片是否存在
         if (pictureId != null) {
-            Picture oldPicture = this.getById(pictureId);
+            oldPicture = this.getById(pictureId);
             ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
 
             // 仅本人或管理员可更新
@@ -173,12 +175,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         });
 
 
-        // 4. 如果是更新图片，则删除旧图片
-        if (pictureId != null) {
-            Picture oldPicture = this.getById(pictureId);
-            if (oldPicture != null) {
-                clearPictureFile(oldPicture);
-            }
+        // 4. 如果是更新图片，则清理旧图片文件
+        if (oldPicture != null) {
+            clearPictureFile(oldPicture);
         }
 
         return PictureVO.convertObjectToVO(picture);
@@ -216,6 +215,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         String searchText = pictureQueryDTO.getSearchText();
         Long spaceId = pictureQueryDTO.getSpaceId();
         boolean nullSpaceId = pictureQueryDTO.isNullSpaceId();
+        LocalDateTime startEditTime = pictureQueryDTO.getStartEditTime();
+        LocalDateTime endEditTime = pictureQueryDTO.getEndEditTime();
         String sortField = pictureQueryDTO.getSortField();
         String sortOrder = pictureQueryDTO.getSortOrder();
 
@@ -239,6 +240,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         queryWrapper.like(StrUtil.isNotBlank(reviewMessage), "review_message", reviewMessage);
         queryWrapper.eq(ObjUtil.isNotEmpty(spaceId), "space_id", spaceId);
         queryWrapper.isNull(nullSpaceId, "space_id");
+        queryWrapper.ge(ObjectUtil.isNotEmpty(startEditTime), "edit_time", startEditTime);
+        queryWrapper.le(ObjectUtil.isNotEmpty(endEditTime), "edit_time", endEditTime);
 
         // 处理标签JSON数组查询条件
         if (CollUtil.isNotEmpty(tags)) {
@@ -469,15 +472,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     @Async
     @Override
     public void clearPictureFile(Picture oldPicture) {
-        // 1. 判断图片是否存在
+        // 1. 判断图片URL是否仍被其他图片引用
         String pictureUrl = oldPicture.getUrl();
         Long count = this.lambdaQuery().eq(Picture::getUrl, pictureUrl).count();
-        if (count == null || count <= 0) {
-            log.info("图片不存在，无法删除：{}", oldPicture.getUrl());
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "图片不存在，无法删除");
-        }
-
-        if (count > 1) {
+        // 该URL仍被其他图片引用，则不能删除对应的文件
+        if (count != null && count > 0) {
             log.info("图片被其他用户使用，无法删除：{}", oldPicture.getUrl());
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "图片被其他用户使用，无法删除");
         }

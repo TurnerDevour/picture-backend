@@ -7,6 +7,8 @@ import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.picturebackend.annotation.AuthCheck;
+import com.example.picturebackend.api.imagesearch.ImageSearchApiFacade;
+import com.example.picturebackend.api.imagesearch.model.ImageSearchResult;
 import com.example.picturebackend.common.BaseResponse;
 import com.example.picturebackend.common.DeleteRequest;
 import com.example.picturebackend.common.ResultUtils;
@@ -292,5 +294,22 @@ public class PictureController {
         // 3. 调用 service 进行批量上传
         int successCount = pictureService.uploadPictureByBatch(pictureUploadByBatchDTO, loginUser);
         return ResultUtils.success(successCount);
+    }
+
+    /**
+     * 以图搜图
+     */
+    @PostMapping("/search/picture")
+    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureDTO searchPictureByPictureDTO) {
+        // 1. 校验参数
+        ThrowUtils.throwIf(searchPictureByPictureDTO == null || searchPictureByPictureDTO.getPictureId() == null, ErrorCode.PARAMS_ERROR);
+        // 2. 获取图片id
+        Long pictureId = searchPictureByPictureDTO.getPictureId();
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAMS_ERROR);
+        // 3. 获取图片信息
+        Picture picture = pictureService.getById(pictureId);
+        ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+        List<ImageSearchResult> imageSearchResults = ImageSearchApiFacade.searchImage(picture.getUrl());
+        return ResultUtils.success(imageSearchResults);
     }
 }
