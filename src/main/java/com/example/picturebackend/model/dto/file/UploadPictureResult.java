@@ -60,5 +60,11 @@ public class UploadPictureResult implements Serializable {
     @ApiModelProperty(value = "缩略图 url")
     private String thumbnailUrl;
 
+    /**
+     * 图片主色调
+     */
+    @ApiModelProperty(value = "图片主色调")
+    private String picColor;
+
     private static final long serialVersionUID = 1L;
 }

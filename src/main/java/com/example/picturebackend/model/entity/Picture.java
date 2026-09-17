@@ -145,6 +145,14 @@ public class Picture implements Serializable {
     private Long spaceId;
 
     /**
+     * 图片主色调
+     */
+    @TableField(value = "pic_color")
+    @ApiModelProperty(value = "图片主色调")
+    private String picColor;
+
+
+    /**
      * 创建时间
      */
     @TableField(value = "create_time")

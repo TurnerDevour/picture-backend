@@ -36,7 +36,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
@@ -312,4 +311,39 @@ public class PictureController {
         List<ImageSearchResult> imageSearchResults = ImageSearchApiFacade.searchImage(picture.getUrl());
         return ResultUtils.success(imageSearchResults);
     }
+
+    /**
+     * 以颜色搜图
+     */
+    @PostMapping("/search/color")
+    public BaseResponse<List<PictureVO>> searchPictureByColor(@RequestBody SearchPictureByColorDTO searchPictureByColorDTO, HttpServletRequest request) {
+        // 1. 校验参数
+        ThrowUtils.throwIf(searchPictureByColorDTO == null, ErrorCode.PARAMS_ERROR);
+        // 2. 获取颜色和空间id
+        String picColor = searchPictureByColorDTO.getPicColor();
+        Long spaceId = searchPictureByColorDTO.getSpaceId();
+        ThrowUtils.throwIf(picColor == null || picColor.isEmpty(), ErrorCode.PARAMS_ERROR, "颜色不能为空");
+        // 3. 获取登录用户
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        // 4. 查询图片
+        List<PictureVO> pictureVOList = pictureService.searchPictureByColor(spaceId, picColor, loginUser);
+        return ResultUtils.success(pictureVOList);
+    }
+
+    /**
+     * 批量编辑图片信息
+     *
+     */
+    @PostMapping("/edit/batch")
+    public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchDTO pictureEditByBatchDTO, HttpServletRequest request) {
+        // 1. 校验参数
+        ThrowUtils.throwIf(pictureEditByBatchDTO == null, ErrorCode.PARAMS_ERROR);
+        // 2. 获取登录用户
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        // 3. 进行批量编辑
+        pictureService.editPictureByBatch(pictureEditByBatchDTO, loginUser);
+        return ResultUtils.success(true);
+    }
+
+
 }

@@ -4,12 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.IService;
 import com.example.picturebackend.model.dto.picture.*;
+import com.example.picturebackend.model.dto.user.UserLoginDTO;
 import com.example.picturebackend.model.entity.Picture;
 import com.example.picturebackend.model.entity.User;
 import com.example.picturebackend.model.vo.LoginUserVO;
 import com.example.picturebackend.model.vo.PictureVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 public interface PictureService extends IService<Picture> {
 
@@ -116,5 +118,24 @@ public interface PictureService extends IService<Picture> {
      * @param loginUser      登录用户
      */
     void editPicture(PictureEditDTO pictureEditDTO, LoginUserVO loginUser);
+
+    /**
+     * 根据颜色搜索图片
+     *
+     * @param spaceId   空间ID
+     * @param picColor  图片颜色
+     * @param loginUser 登录用户
+     *
+     * @return List<PictureVO>
+     */
+    List<PictureVO> searchPictureByColor(Long spaceId, String picColor, LoginUserVO loginUser);
+
+    /**
+     * 批量编辑图片信息
+     *
+     * @param pictureEditByBatchDTO 批量编辑图片信息 DTO
+     * @param loginUser             登录用户
+     */
+    void editPictureByBatch(PictureEditByBatchDTO pictureEditByBatchDTO, LoginUserVO loginUser);
 }
 

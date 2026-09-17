@@ -127,6 +127,9 @@ public class PictureVO implements Serializable {
     @ApiModelProperty(value = "空间 id")
     private Long spaceId;
 
+    @ApiModelProperty(value = "图片主色调")
+    private String picColor;
+
 
     private static final long serialVersionUID = 1L;
 
