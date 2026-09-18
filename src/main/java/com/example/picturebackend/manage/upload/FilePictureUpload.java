@@ -25,6 +25,16 @@ public class FilePictureUpload extends PictureUploadTemplate {
     @Override
     protected String getOriginalFilename(Object inputSource) {
         MultipartFile multipartFile = (MultipartFile) inputSource;
+
+        // 针对 AI扩图提取文件名
+        String originalFilename = multipartFile.getOriginalFilename();
+        if (originalFilename != null && originalFilename.contains("result-") && originalFilename.contains("?OSSAccessKeyId")) {
+            int start = originalFilename.indexOf("result-");
+            int end = originalFilename.indexOf("?OSSAccessKeyId");
+            return originalFilename.substring(start, end);
+        }
+
+        // 针对普通文件提取文件名
         return multipartFile.getOriginalFilename();
     }
 

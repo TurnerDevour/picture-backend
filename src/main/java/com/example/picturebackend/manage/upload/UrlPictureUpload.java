@@ -32,7 +32,14 @@ public class UrlPictureUpload extends PictureUploadTemplate {
     @Override
     protected String getOriginalFilename(Object inputSource) {
         String fileUrl = (String) inputSource;
-        // 返回带后缀的文件名，便于父类模板方法正确提取图片格式后缀
+        // 针对 AI扩图提取文件名
+        if (fileUrl.contains("result-") && fileUrl.contains("?OSSAccessKeyId")) {
+            int start = fileUrl.indexOf("result-");
+            int end = fileUrl.indexOf("?OSSAccessKeyId");
+            return fileUrl.substring(start, end);
+        }
+
+        // 针对普通 URL 提取文件名
         return FileUtil.getName(fileUrl);
     }
 

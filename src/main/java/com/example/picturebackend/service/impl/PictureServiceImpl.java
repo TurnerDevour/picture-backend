@@ -9,6 +9,9 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
+import com.example.picturebackend.api.aliyunai.AliyunAIApi;
+import com.example.picturebackend.api.aliyunai.model.CreateOutPaintingTaskRequest;
+import com.example.picturebackend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.example.picturebackend.exception.BusinessException;
 import com.example.picturebackend.exception.ErrorCode;
 import com.example.picturebackend.exception.ThrowUtils;
@@ -72,6 +75,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
     @Resource
     private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private AliyunAIApi aliyunAIApi;
 
     /**
      * 上传图片
@@ -720,6 +726,31 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         // 5. 批量更新图片信息
         boolean result = this.updateBatchById(pictureList);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "批量更新图片信息失败");
+    }
+
+    /**
+     * 创建扩图任务
+     *
+     * @param createPictureOutPaintingTaskDTO 扩图任务创建信息
+     * @param loginUser                       登录用户
+     *
+     * @return CreateOutPaintingTaskResponse
+     */
+    @Override
+    public CreateOutPaintingTaskResponse createOutPaintingTask(CreatePictureOutPaintingTaskDTO createPictureOutPaintingTaskDTO, LoginUserVO loginUser) {
+        // 1. 获取图片信息
+        Long pictureId = createPictureOutPaintingTaskDTO.getPictureId();
+        Picture picture = Optional.ofNullable(this.getById(pictureId))
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_ERROR, "图片不存在"));
+        // 2. 校验权限
+        checkPictureAuth(picture, loginUser);
+        // 3. 创建扩图任务
+        CreateOutPaintingTaskRequest taskRequest = new CreateOutPaintingTaskRequest();
+        CreateOutPaintingTaskRequest.Input input = new CreateOutPaintingTaskRequest.Input();
+        input.setImageUrl(picture.getUrl());
+        taskRequest.setInput(input);
+        BeanUtil.copyProperties(createPictureOutPaintingTaskDTO, taskRequest);
+        return aliyunAIApi.createOutPaintingTask(taskRequest);
     }
 
     /**

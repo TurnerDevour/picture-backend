@@ -68,3 +68,10 @@ cos:
     region: ${COS_REGION}
     bucket-name: ${COS_BUCKET_NAME}
     host: ${COS_HOST}
+
+# 阿里云百炼AI配置
+aliyun:
+  bailian:
+    app-key: ${ALI_AI_API_KEY}
+    workspace-id: ${ALI_WORKSPACE_ID}
+
