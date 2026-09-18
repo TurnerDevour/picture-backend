@@ -3,13 +3,11 @@ package com.example.picturebackend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.IService;
-import com.example.picturebackend.model.dto.picture.PictureQueryDTO;
 import com.example.picturebackend.model.dto.space.SpaceAddDTO;
+import com.example.picturebackend.model.dto.space.SpaceAnalyzeDTO;
 import com.example.picturebackend.model.dto.space.SpaceQueryDTO;
-import com.example.picturebackend.model.entity.Picture;
 import com.example.picturebackend.model.entity.Space;
 import com.example.picturebackend.model.vo.LoginUserVO;
-import com.example.picturebackend.model.vo.PictureVO;
 import com.example.picturebackend.model.vo.SpaceVO;
 
 import javax.servlet.http.HttpServletRequest;
@@ -69,5 +67,21 @@ public interface SpaceService extends IService<Space> {
      * @param space 空间实体
      */
     void fillSpaceBySpaceLevel(Space space);
+
+    /**
+     * 检查空间权限
+     *
+     * @param space     空间实体
+     * @param loginUser 登录用户信息
+     */
+    void checkSpaceAuth(Space space, LoginUserVO loginUser);
+
+    /**
+     * 检查空间分析权限
+     *
+     * @param spaceAnalyzeDTO 空间分析DTO
+     * @param loginUser       登录用户信息
+     */
+    void checkSpaceAnalyzeAuth(SpaceAnalyzeDTO spaceAnalyzeDTO, LoginUserVO loginUser);
 }
 

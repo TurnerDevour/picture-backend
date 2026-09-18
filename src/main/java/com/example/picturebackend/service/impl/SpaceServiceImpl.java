@@ -11,6 +11,7 @@ import com.example.picturebackend.exception.BusinessException;
 import com.example.picturebackend.exception.ErrorCode;
 import com.example.picturebackend.exception.ThrowUtils;
 import com.example.picturebackend.model.dto.space.SpaceAddDTO;
+import com.example.picturebackend.model.dto.space.SpaceAnalyzeDTO;
 import com.example.picturebackend.model.dto.space.SpaceQueryDTO;
 import com.example.picturebackend.model.dto.user.UserVO;
 import com.example.picturebackend.model.entity.Picture;
@@ -21,6 +22,7 @@ import com.example.picturebackend.model.vo.PictureVO;
 import com.example.picturebackend.model.vo.SpaceVO;
 import com.example.picturebackend.service.UserService;
 import org.apache.ibatis.transaction.Transaction;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.example.picturebackend.mapper.SpaceMapper;
 import com.example.picturebackend.model.entity.Space;
@@ -44,6 +46,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
 
     @Resource
     private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private SpaceService spaceService;
 
     /**
      * 添加空间
@@ -239,5 +244,70 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
                 space.setMaxCount(maxCount);
             }
         }
+    }
+
+    /**
+     * 检查空间权限
+     *
+     * @param space     空间实体
+     * @param loginUser 登录用户信息
+     */
+    @Override
+    public void checkSpaceAuth(Space space, LoginUserVO loginUser) {
+        // 1. 检查空间是否存在
+        ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR, "空间不存在");
+        // 2. 检查空间是否是当前用户或者管理员
+        if (!loginUser.getId().equals(space.getUserId()) && !userService.isAdmin(loginUser)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+    }
+
+    /**
+     * 检查空间分析权限
+     *
+     * @param spaceAnalyzeDTO 空间分析DTO
+     * @param loginUser       登录用户信息
+     */
+    @Override
+    public void checkSpaceAnalyzeAuth(SpaceAnalyzeDTO spaceAnalyzeDTO, LoginUserVO loginUser) {
+        // 1. 检查权限
+        if (spaceAnalyzeDTO.isQueryAll() || spaceAnalyzeDTO.isQueryPublic()) {
+            // 全空间分析或者公共图库权限校验：仅管理员可访问
+            ThrowUtils.throwIf(!userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR, "非管理员无权限访问全空间分析或公共图库");
+        } else {
+            // 私有空间图库校验
+            Long spaceId = spaceAnalyzeDTO.getSpaceId();
+            ThrowUtils.throwIf(spaceId == null || spaceId <= 0, ErrorCode.PARAMS_ERROR, "空间ID不能为空");
+            Space space = spaceService.getById(spaceId);// 检查空间是否存在
+            ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR, "空间不存在");
+            // 检查空间是否属于当前用户
+            checkSpaceAuth(space, loginUser);
+        }
+    }
+
+    /**
+     * 根据分析范围填充空间分析查询条件
+     *
+     * @param spaceAnalyzeDTO 空间分析DTO
+     * @param queryWrapper    查询条件包装器
+     */
+    private static void fillAnalyzeQueryWrapper(SpaceAnalyzeDTO spaceAnalyzeDTO, QueryWrapper<Picture> queryWrapper) {
+        // 全空间分析：不需要额外条件
+        if (spaceAnalyzeDTO.isQueryAll()) {
+            return;
+        }
+        // 公共图库分析
+        if (spaceAnalyzeDTO.isQueryPublic()) {
+            queryWrapper.isNull("space_id");
+            return;
+        }
+        // 私有空间分析
+        Long spaceId = spaceAnalyzeDTO.getSpaceId();
+        if (spaceId != null && spaceId > 0) {
+            queryWrapper.eq("space_id", spaceId);
+            return;
+        }
+        // 如果没有指定分析范围，抛出异常
+        throw new BusinessException(ErrorCode.PARAMS_ERROR, "查询分析范围未指定");
     }
 }
