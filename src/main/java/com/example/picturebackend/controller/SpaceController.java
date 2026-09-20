@@ -11,15 +11,10 @@ import com.example.picturebackend.exception.BusinessException;
 import com.example.picturebackend.exception.ErrorCode;
 import com.example.picturebackend.exception.ThrowUtils;
 import com.example.picturebackend.model.dto.picture.*;
-import com.example.picturebackend.model.dto.space.SpaceAddDTO;
-import com.example.picturebackend.model.dto.space.SpaceEditDTO;
-import com.example.picturebackend.model.dto.space.SpaceQueryDTO;
-import com.example.picturebackend.model.dto.space.SpaceUpdateDTO;
+import com.example.picturebackend.model.dto.space.*;
 import com.example.picturebackend.model.entity.Space;
 import com.example.picturebackend.model.enums.SpaceLevelEnum;
-import com.example.picturebackend.model.vo.LoginUserVO;
-import com.example.picturebackend.model.vo.SpaceLevelVO;
-import com.example.picturebackend.model.vo.SpaceVO;
+import com.example.picturebackend.model.vo.*;
 import com.example.picturebackend.service.SpaceService;
 import com.example.picturebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -81,7 +76,7 @@ public class SpaceController {
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> updateSpace(@RequestBody SpaceUpdateDTO spaceUpdateDTO, HttpServletRequest request) {
+    public BaseResponse<Boolean> updateSpace(@RequestBody SpaceUpdateDTO spaceUpdateDTO) {
         if (spaceUpdateDTO == null || spaceUpdateDTO.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -196,5 +191,73 @@ public class SpaceController {
         boolean result = spaceService.updateById(space);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
+    }
+
+    /**
+     * 空间分析--获取空间使用情况
+     */
+    @PostMapping("/analyze/usage")
+    public BaseResponse<SpaceUsageAnalyzeVO> getSpaceUsageAnalyze(@RequestBody SpaceUsageAnalyzeDTO spaceUsageAnalyzeDTO, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceUsageAnalyzeDTO == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+
+        SpaceUsageAnalyzeVO spaceUsageAnalyzeVO = spaceService.getSpaceUsageAnalyze(spaceUsageAnalyzeDTO, loginUser);
+        return ResultUtils.success(spaceUsageAnalyzeVO);
+    }
+
+    /**
+     * 空间分析--获取空间分类分析数据
+     */
+    @PostMapping("/analyze/category")
+    public BaseResponse<List<SpaceCategoryAnalyzeVO>> getSpaceCategoryAnalyze(@RequestBody SpaceCategoryAnalyzeDTO spaceCategoryAnalyzeDTO, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceCategoryAnalyzeDTO == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+
+        List<SpaceCategoryAnalyzeVO> spaceCategoryAnalyzeVOList = spaceService.getSpaceCategoryAnalyze(spaceCategoryAnalyzeDTO, loginUser);
+        return ResultUtils.success(spaceCategoryAnalyzeVOList);
+    }
+
+    /**
+     * 空间分析--获取空间标签分析数据
+     */
+    @PostMapping("/analyze/tag")
+    public BaseResponse<List<SpaceTagAnalyzeVO>> getSpaceTagAnalyze(@RequestBody SpaceTagAnalyzeDTO spaceTagAnalyzeDTO, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceTagAnalyzeDTO == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        List<SpaceTagAnalyzeVO> spaceTagAnalyzeVOList = spaceService.getSpaceTagAnalyze(spaceTagAnalyzeDTO, loginUser);
+        return ResultUtils.success(spaceTagAnalyzeVOList);
+    }
+
+    /**
+     * 空间分析--获取空间图片大小分析数据
+     */
+    @PostMapping("/analyze/size")
+    public BaseResponse<List<SpaceSizeAnalyzeVO>> getSpaceSizeAnalyze(@RequestBody SpaceSizeAnalyzeDTO spaceSizeAnalyzeDTO, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceSizeAnalyzeDTO == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        List<SpaceSizeAnalyzeVO> spaceSizeAnalyzeVOList = spaceService.getSpaceSizeAnalyze(spaceSizeAnalyzeDTO, loginUser);
+        return ResultUtils.success(spaceSizeAnalyzeVOList);
+    }
+
+    /**
+     * 空间分析--获取空间用户分析数据
+     */
+    @PostMapping("/analyze/user")
+    public BaseResponse<List<SpaceUserAnalyzeVO>> getSpaceUserAnalyze(@RequestBody SpaceUserAnalyzeDTO spaceUserAnalyzeDTO, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceUserAnalyzeDTO == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        List<SpaceUserAnalyzeVO> spaceUserAnalyzeVOList = spaceService.getSpaceUserAnalyze(spaceUserAnalyzeDTO, loginUser);
+        return ResultUtils.success(spaceUserAnalyzeVOList);
+    }
+
+    /**
+     * 空间分析--获取空间排名分析数据
+     */
+    @PostMapping("/analyze/rank")
+    public BaseResponse<List<SpaceRankAnalyzeVO>> getSpaceRankAnalyze(@RequestBody SpaceRankAnalyzeDTO spaceRankAnalyzeDTO, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceRankAnalyzeDTO == null, ErrorCode.PARAMS_ERROR);
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        List<SpaceRankAnalyzeVO> spaceRankAnalyzeVOList = spaceService.getSpaceRankAnalyze(spaceRankAnalyzeDTO, loginUser);
+        return ResultUtils.success(spaceRankAnalyzeVOList);
     }
 }

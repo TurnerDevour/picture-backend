@@ -3,14 +3,13 @@ package com.example.picturebackend.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.spring.service.IService;
-import com.example.picturebackend.model.dto.space.SpaceAddDTO;
-import com.example.picturebackend.model.dto.space.SpaceAnalyzeDTO;
-import com.example.picturebackend.model.dto.space.SpaceQueryDTO;
+import com.example.picturebackend.model.dto.space.*;
+import com.example.picturebackend.model.dto.space.SpaceSizeAnalyzeDTO;
 import com.example.picturebackend.model.entity.Space;
-import com.example.picturebackend.model.vo.LoginUserVO;
-import com.example.picturebackend.model.vo.SpaceVO;
+import com.example.picturebackend.model.vo.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 public interface SpaceService extends IService<Space> {
 
@@ -83,5 +82,65 @@ public interface SpaceService extends IService<Space> {
      * @param loginUser       登录用户信息
      */
     void checkSpaceAnalyzeAuth(SpaceAnalyzeDTO spaceAnalyzeDTO, LoginUserVO loginUser);
+
+    /**
+     * 获取空间使用分析数据
+     *
+     * @param spaceAnalyzeDTO 空间分析DTO
+     * @param loginUser       登录用户信息
+     *
+     * @return SpaceUsageAnalyzeVO
+     */
+    SpaceUsageAnalyzeVO getSpaceUsageAnalyze(SpaceAnalyzeDTO spaceAnalyzeDTO, LoginUserVO loginUser);
+
+    /**
+     * 获取空间分类分析数据
+     *
+     * @param spaceCategoryAnalyzeDTO 空间分类分析DTO
+     * @param loginUser               登录用户信息
+     *
+     * @return List<SpaceCategoryAnalyzeVO>
+     */
+    List<SpaceCategoryAnalyzeVO> getSpaceCategoryAnalyze(SpaceCategoryAnalyzeDTO spaceCategoryAnalyzeDTO, LoginUserVO loginUser);
+
+    /**
+     * 获取空间标签分析数据
+     *
+     * @param spaceTagAnalyzeDTO 空间标签分析DTO
+     * @param loginUser          登录用户信息
+     *
+     * @return List<SpaceTagAnalyzeVO>
+     */
+    List<SpaceTagAnalyzeVO> getSpaceTagAnalyze(SpaceTagAnalyzeDTO spaceTagAnalyzeDTO, LoginUserVO loginUser);
+
+    /**
+     * 获取空间大小分析数据
+     *
+     * @param spaceSizeAnalyzeDTO 空间大小分析DTO
+     * @param loginUser           登录用户信息
+     *
+     * @return List<SpaceSizeAnalyzeVO>
+     */
+    List<SpaceSizeAnalyzeVO> getSpaceSizeAnalyze(SpaceSizeAnalyzeDTO spaceSizeAnalyzeDTO, LoginUserVO loginUser);
+
+    /**
+     * 获取空间用户分析数据
+     *
+     * @param spaceUserAnalyzeDTO 空间用户分析DTO
+     * @param loginUser           登录用户信息
+     *
+     * @return List<SpaceUserAnalyzeVO>
+     */
+    List<SpaceUserAnalyzeVO> getSpaceUserAnalyze(SpaceUserAnalyzeDTO spaceUserAnalyzeDTO, LoginUserVO loginUser);
+
+    /**
+     * 获取空间排名分析数据
+     *
+     * @param spaceRankAnalyzeDTO 空间排名分析DTO
+     * @param loginUser           登录用户信息
+     *
+     * @return List<SpaceRankAnalyzeVO>
+     */
+    List<SpaceRankAnalyzeVO> getSpaceRankAnalyze(SpaceRankAnalyzeDTO spaceRankAnalyzeDTO, LoginUserVO loginUser);
 }
 
