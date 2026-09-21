@@ -10,6 +10,7 @@ import com.example.picturebackend.constant.UserConstant;
 import com.example.picturebackend.exception.BusinessException;
 import com.example.picturebackend.exception.ErrorCode;
 import com.example.picturebackend.exception.ThrowUtils;
+import com.example.picturebackend.manage.auth.SpaceUserAuthManager;
 import com.example.picturebackend.model.dto.picture.*;
 import com.example.picturebackend.model.dto.space.*;
 import com.example.picturebackend.model.entity.Space;
@@ -18,6 +19,7 @@ import com.example.picturebackend.model.vo.*;
 import com.example.picturebackend.service.SpaceService;
 import com.example.picturebackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -37,6 +39,9 @@ public class SpaceController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
 
     @PostMapping("/add")
@@ -106,7 +111,6 @@ public class SpaceController {
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Space> getSpaceById(long id) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
-
         Space result = spaceService.getById(id);
         ThrowUtils.throwIf(result == null, ErrorCode.NOT_FOUND_ERROR);
         return ResultUtils.success(result);
@@ -115,10 +119,13 @@ public class SpaceController {
     @GetMapping("/get/vo")
     public BaseResponse<SpaceVO> getSpaceVOById(long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
-
         Space space = spaceService.getById(id);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
-        return ResultUtils.success(spaceService.getSpaceVO(space, request));
+        SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
+        LoginUserVO loginUser = userService.getCurrentLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        spaceVO.setPermissionList(permissionList);
+        return ResultUtils.success(spaceVO);
     }
 
     /**

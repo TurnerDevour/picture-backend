@@ -9,6 +9,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -129,6 +130,12 @@ public class PictureVO implements Serializable {
 
     @ApiModelProperty(value = "图片主色调")
     private String picColor;
+
+    /**
+     * 权限列表
+     */
+    @ApiModelProperty(value = "权限列表")
+    private List<String> permissionList = new ArrayList<>();
 
 
     private static final long serialVersionUID = 1L;

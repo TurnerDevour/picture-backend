@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.example.picturebackend.constant.UserConstant;
 import com.example.picturebackend.exception.BusinessException;
 import com.example.picturebackend.exception.ErrorCode;
+import com.example.picturebackend.manage.auth.StpKit;
 import com.example.picturebackend.model.dto.user.UserAddDTO;
 import com.example.picturebackend.model.dto.user.UserQueryDTO;
 import com.example.picturebackend.model.dto.user.UserUpdateDTO;
@@ -103,11 +104,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "登录失败，用户不存在或密码错误");
         }
 
-
         // 3. 将用户信息存入 session
         request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, loginUser);
-
-        return BeanUtil.copyProperties(loginUser, LoginUserVO.class);
+        StpKit.SPACE.login(loginUser.getId());
+        LoginUserVO loginUserVO = BeanUtil.copyProperties(loginUser, LoginUserVO.class);
+        StpKit.SPACE.getSession().set(UserConstant.USER_LOGIN_STATE, loginUserVO);
+        return loginUserVO;
     }
 
     /**

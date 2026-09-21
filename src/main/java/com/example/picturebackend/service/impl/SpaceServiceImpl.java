@@ -13,26 +13,26 @@ import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.example.picturebackend.exception.BusinessException;
 import com.example.picturebackend.exception.ErrorCode;
 import com.example.picturebackend.exception.ThrowUtils;
+import com.example.picturebackend.mapper.SpaceUserMapper;
 import com.example.picturebackend.model.dto.space.*;
 import com.example.picturebackend.model.dto.user.UserVO;
 import com.example.picturebackend.model.entity.Picture;
+import com.example.picturebackend.model.entity.SpaceUser;
 import com.example.picturebackend.model.entity.User;
 import com.example.picturebackend.model.enums.SpaceLevelEnum;
+import com.example.picturebackend.model.enums.SpaceRoleEnum;
 import com.example.picturebackend.model.enums.SpaceTypeEnum;
 import com.example.picturebackend.model.vo.*;
 import com.example.picturebackend.mapper.PictureMapper;
 import com.example.picturebackend.service.UserService;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.springframework.stereotype.Service;
 import com.example.picturebackend.mapper.SpaceMapper;
 import com.example.picturebackend.model.entity.Space;
 import com.example.picturebackend.service.SpaceService;
 import org.springframework.transaction.support.TransactionTemplate;
-
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,10 +42,16 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
     private UserService userService;
 
     @Resource
+    private SpaceUserMapper spaceUserMapper;
+
+    @Resource
     private PictureMapper pictureMapper;
 
     @Resource
     private TransactionTemplate transactionTemplate;
+
+    //@Resource
+    //private DynamicShardingManager dynamicShardingManager;
 
     /**
      * 添加空间
@@ -96,6 +102,19 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
                 // 5. 插入数据
                 boolean result = this.save(space);
                 ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "空间创建失败");
+
+                // 6. 如果是团队空间，关联新增空间成员信息
+                if (space.getSpaceType() == SpaceTypeEnum.TEAM.getValue()) {
+                    SpaceUser spaceUser = new SpaceUser();
+                    spaceUser.setSpaceId(space.getId());
+                    spaceUser.setUserId(userId);
+                    spaceUser.setSpaceRole(SpaceRoleEnum.ADMIN.getValue());
+                    result = spaceUserMapper.insert(spaceUser) > 0;
+                    ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "空间成员创建失败");
+                }
+                // 7. 动态创建分表
+                //dynamicShardingManager.createSpacePictureTable(space);
+
                 return space.getId();
             });
 

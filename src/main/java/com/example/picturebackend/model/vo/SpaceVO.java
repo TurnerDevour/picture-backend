@@ -10,6 +10,8 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @ApiModel(description = "空间视图对象")
@@ -95,6 +97,13 @@ public class SpaceVO implements Serializable {
      */
     @ApiModelProperty(value = "创建用户")
     private UserVO user;
+
+    /**
+     * 权限列表
+     */
+    @ApiModelProperty(value = "权限列表")
+    private List<String> permissionList = new ArrayList<>();
+
 
     /**
      * 封装一个类转对象的方法
