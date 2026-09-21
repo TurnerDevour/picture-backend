@@ -260,4 +260,6 @@ public class SpaceController {
         List<SpaceRankAnalyzeVO> spaceRankAnalyzeVOList = spaceService.getSpaceRankAnalyze(spaceRankAnalyzeDTO, loginUser);
         return ResultUtils.success(spaceRankAnalyzeVOList);
     }
+
+
 }

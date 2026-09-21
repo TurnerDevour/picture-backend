@@ -18,6 +18,7 @@ import com.example.picturebackend.model.dto.user.UserVO;
 import com.example.picturebackend.model.entity.Picture;
 import com.example.picturebackend.model.entity.User;
 import com.example.picturebackend.model.enums.SpaceLevelEnum;
+import com.example.picturebackend.model.enums.SpaceTypeEnum;
 import com.example.picturebackend.model.vo.*;
 import com.example.picturebackend.mapper.PictureMapper;
 import com.example.picturebackend.service.UserService;
@@ -64,7 +65,10 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
             space.setSpaceName("默认空间");
         }
         if (spaceAddDTO.getSpaceLevel() == null) {
-            space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
+            space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue()); // 默认普通级别
+        }
+        if (spaceAddDTO.getSpaceType() == null) {
+            space.setSpaceType(SpaceTypeEnum.PRIVATE.getValue()); // 默认私有空间
         }
         // 填充数据
         fillSpaceBySpaceLevel(space);
@@ -79,11 +83,14 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "非管理员只能创建普通级别的空间");
         }
 
-        // 4. 控制同一用户只能创建一个私有空间
+        // 4. 控制同一用户只能创建一个私有空间,以及创建一个团队空间
         String lock = String.valueOf(userId).intern();
         synchronized (lock) {
             Long newSpaceId = transactionTemplate.execute(status -> {
-                boolean exists = this.lambdaQuery().eq(Space::getUserId, userId).exists();
+                boolean exists = this.lambdaQuery()
+                        .eq(Space::getUserId, userId)
+                        .eq(Space::getSpaceType, space.getSpaceType())
+                        .exists();
                 ThrowUtils.throwIf(exists, ErrorCode.PARAMS_ERROR, "同一用户只能创建一个私有空间");
 
                 // 5. 插入数据
@@ -109,7 +116,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
         // 2. 取出space中的属性
         String spaceName = space.getSpaceName();
         Integer spaceLevel = space.getSpaceLevel();
+        Integer spaceType = space.getSpaceType();
         SpaceLevelEnum spaceLevelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
+        SpaceTypeEnum spaceTypeEnum = SpaceTypeEnum.getEnumByValue(spaceType);
         //3. 判断是创建还是更新, add 为true表示创建, false表示更新
         if (add) {
             // 4. 校验空间名称是否为空
@@ -117,17 +126,24 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间名称不能为空");
             }
             // 5. 校验空间等级是否为空
-            if (spaceLevelEnum == null) {
+            if (spaceLevel == null) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间等级不能为空");
             }
+            if (spaceType == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间类型不能为空");
+            }
         }
-        //6.更新时，如果要更新空间级别，则需要校验空间级别是否为空
+        // 6. 校验空间名称长度
+        if (StrUtil.isNotBlank(spaceName) && spaceName.length() > 30) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间名称过长");
+        }
+        // 7. 更新时，如果要更新空间级别，则需要校验空间级别是否为空
         if (spaceLevel != null && spaceLevelEnum == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间等级不能为空");
         }
-        //7. 校验空间名称长度
-        if (StrUtil.isNotBlank(spaceName) && spaceName.length() > 30) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间名称过长");
+        // 8. 校验空间类型是否为空
+        if (spaceType != null && spaceTypeEnum == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间类型不能为空");
         }
     }
 
@@ -150,11 +166,13 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
         Long userId = spaceQueryDTO.getUserId();
         String spaceName = spaceQueryDTO.getSpaceName();
         Integer spaceLevel = spaceQueryDTO.getSpaceLevel();
+        Integer spaceType = spaceQueryDTO.getSpaceType();
         String sortField = spaceQueryDTO.getSortField();
         String sortOrder = spaceQueryDTO.getSortOrder();
 
         queryWrapper.eq(ObjectUtil.isNotNull(id), "id", id);
         queryWrapper.eq(ObjectUtil.isNotNull(spaceLevel), "space_level", spaceLevel);
+        queryWrapper.eq(ObjectUtil.isNotNull(spaceType), "space_type", spaceType);
         queryWrapper.eq(ObjectUtil.isNotNull(userId), "user_id", userId);
         queryWrapper.like(StrUtil.isNotBlank(spaceName), "space_name", spaceName);
 

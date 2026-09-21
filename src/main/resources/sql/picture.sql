@@ -95,3 +95,24 @@ create table if not exists space
     index idx_space_level (space_level) -- 提升按空间级别查询的效率
 ) engine = InnoDB comment '空间'
   collate = utf8mb4_general_ci;
+
+-- 增加 space_type 字段
+ALTER TABLE space
+    ADD COLUMN space_type int default 0 not null comment '空间类型（0：个人空间，1：团队空间）';
+CREATE INDEX idx_space_type ON space (space_type);
+
+-- 空间成员表
+create table if not exists space_user
+(
+    id          bigint auto_increment comment 'id' primary key,
+    space_id    bigint                                 not null comment '空间 id',
+    user_id     bigint                                 not null comment '用户 id',
+    space_role  varchar(128) default 'viewer'          null comment '空间角色：viewer/editor/admin',
+    create_time datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    -- 索引设计
+    UNIQUE KEY uk_space_id_user_id (space_id, user_id), -- 唯一索引，用户在一个空间中只能有一个角色
+    INDEX idx_space_id (space_id),                      -- 提升按空间查询的性能
+    INDEX idx_user_id (user_id)                         -- 提升按用户查询的性能
+) engine = InnoDB comment '空间用户关联'
+  collate = utf8mb4_general_ci;
