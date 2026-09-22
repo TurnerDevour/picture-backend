@@ -47,6 +47,15 @@ public interface UserService extends IService<User> {
     LoginUserVO getCurrentLoginUser(HttpServletRequest request);
 
     /**
+     * 获取当前登录用户实体（包含全部字段，如密码等，仅在服务端内部使用）
+     *
+     * @param request 请求对象
+     *
+     * @return 当前登录用户实体
+     */
+    User getCurrentLoginUserEntity(HttpServletRequest request);
+
+    /**
      * 用户注销
      *
      * @param request 请求对象

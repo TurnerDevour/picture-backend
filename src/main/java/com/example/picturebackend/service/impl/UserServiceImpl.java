@@ -121,6 +121,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     @Override
     public LoginUserVO getCurrentLoginUser(HttpServletRequest request) {
+        return BeanUtil.copyProperties(getCurrentLoginUserEntity(request), LoginUserVO.class);
+    }
+
+    @Override
+    public User getCurrentLoginUserEntity(HttpServletRequest request) {
         User loginUser = (User) request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
         if (loginUser == null) {
             log.error("用户未登录");
@@ -134,7 +139,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
         }
 
-        return BeanUtil.copyProperties(loginUser, LoginUserVO.class);
+        return loginUser;
     }
 
     /**
