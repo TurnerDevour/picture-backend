@@ -16,6 +16,7 @@ import com.example.picturebackend.exception.ErrorCode;
 import com.example.picturebackend.model.entity.Picture;
 import com.example.picturebackend.model.entity.Space;
 import com.example.picturebackend.model.entity.SpaceUser;
+import com.example.picturebackend.model.entity.User;
 import com.example.picturebackend.model.enums.SpaceRoleEnum;
 import com.example.picturebackend.model.enums.SpaceTypeEnum;
 import com.example.picturebackend.model.vo.LoginUserVO;
@@ -31,8 +32,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
-
-import static com.example.picturebackend.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * 自定义权限加载接口实现类
@@ -75,12 +74,13 @@ public class StpInterfaceImpl implements StpInterface {
         if (isAllFieldsNull(authContext)) {
             return ADMIN_PERMISSIONS;
         }
-        // 获取 userId
-        LoginUserVO loginUser = (LoginUserVO) StpKit.SPACE.getSessionByLoginId(loginId).get(USER_LOGIN_STATE);
-        if (loginUser == null) {
+        // 获取 userId（Sa-Token 登录 id 即用户 id，直接查库获取最新用户信息，避免会话反序列化类型转换问题）
+        Long userId = Long.valueOf(loginId.toString());
+        User user = userService.getById(userId);
+        if (user == null) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "用户未登录");
         }
-        Long userId = loginUser.getId();
+        LoginUserVO loginUser = BeanUtil.copyProperties(user, LoginUserVO.class);
         // 优先从上下文中获取 SpaceUser 对象
         SpaceUser spaceUser = authContext.getSpaceUser();
         if (spaceUser != null) {
