@@ -1,58 +1,15 @@
 spring:
   application:
     name: picture-backend
+  profiles:
+    active:
+      - prod
   servlet:
     multipart:
       max-file-size: 10MB
-  datasource:
-    url: jdbc:mysql://localhost:3306/picture_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: admin123
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  redis:
-    database: 0
-    host: 127.0.0.1
-    port: 6379
-    timeout: 5000
-    password: admin123
-    username: default
-  #    database: 0
-  #    host: ${REDIS_HOST}
-  #    port: ${REDIS_PORT}
-  #    timeout: 5000
-  #    password: ${REDIS_PASSWORD}
-  #    username: ${REDIS_USERNAME}
   session:
     store-type: redis
     timeout: 2592000 # 30天
-  # 空间图片分表
-  shardingsphere:
-    datasource:
-      names: picture_db
-      picture_db:
-        type: com.zaxxer.hikari.HikariDataSource
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://localhost:3306/picture_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-        username: root
-        password: admin123
-    rules:
-      sharding:
-        tables:
-          picture:
-            actual-data-nodes: picture_db.picture  # 动态分表
-            table-strategy:
-              standard:
-                sharding-column: spaceId
-                sharding-algorithm-name: picture_sharding_algorithm  # 使用自定义分片算法
-        sharding-algorithms:
-          picture_sharding_algorithm:
-            type: CLASS_BASED
-            props:
-              strategy: standard
-              algorithmClassName: com.example.picturebackend.manage.sharding.PictureShardingAlgorithm
-    props:
-      sql-show: true
-
 server:
   port: 8123
   servlet:
@@ -60,45 +17,3 @@ server:
     session:
       cookie:
         max-age: 2592000 # 30天
-
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: false
-    # 仅在开发环境开启日志
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  global-config:
-    db-config:
-      logic-delete-field: isDelete # 全局逻辑删除的实体字段名
-      logic-delete-value: 1 # 逻辑已删除值（默认为 1）
-      logic-not-delete-value: 0 # 逻辑未删除值（默认为 0）
-    enable-sql-runner: true
-
-# 接口文档配置
-knife4j:
-  enable: true
-  setting:
-    enable-swagger-models: true
-    swagger-model-name: 实体类列表
-  openapi:
-    title: "接口文档"
-    version: 1.0
-    group:
-      default:
-        api-rule: package
-        api-rule-resources:
-          - com.example.picturebackend.controller
-
-# 配置cos对象存储
-cos:
-  client:
-    secret-id: ${COS_SECRET_ID}
-    secret-key: ${COS_SECRET_KEY}
-    region: ${COS_REGION}
-    bucket-name: ${COS_BUCKET_NAME}
-    host: ${COS_HOST}
-
-# 阿里云百炼AI配置
-aliyun:
-  bailian:
-    app-key: ${ALI_AI_API_KEY}
-    workspace-id: ${ALI_WORKSPACE_ID}
